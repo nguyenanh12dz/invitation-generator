@@ -72,50 +72,6 @@ app.get("/api/invitations/:id", (req, res) => {
 	}
 });
 
-// Tra cứu mã mời trong tất cả các thiệp → trả về mảng các {invitationId, guestId}
-app.get("/api/invitations/by-code/:code", (req, res) => {
-	const code = (req.params.code || "").trim().toLowerCase();
-	if (!code) {
-		return res.status(400).json({ error: "Mã không hợp lệ" });
-	}
-
-	try {
-		const files = fs.readdirSync(DATA_DIR);
-		const results = [];
-		for (const file of files) {
-			if (!file.endsWith(".json")) continue;
-			const filePath = path.join(DATA_DIR, file);
-			const content = fs.readFileSync(filePath, "utf-8");
-			const config = JSON.parse(content);
-
-			const guests = Array.isArray(config.g) ? config.g : [];
-			const matchedGuests = guests.filter(
-				(g) => (g.id || "").toLowerCase() === code,
-			);
-
-			if (matchedGuests.length > 0) {
-				const invitationId = config.id || file.replace(".json", "");
-				matchedGuests.forEach((guest) => {
-					results.push({
-						invitationId,
-						guestId: guest.id,
-						guestName: guest.name,
-					});
-				});
-			}
-		}
-
-		if (results.length === 0) {
-			return res.status(404).json({ error: "Không tìm thấy mã mời" });
-		}
-
-		res.json(results);
-	} catch (e) {
-		console.error(e);
-		res.status(500).json({ error: "Lỗi tra cứu mã" });
-	}
-});
-
 // Production: phục vụ frontend build từ dist
 if (fs.existsSync(DIST_DIR)) {
 	app.use(express.static(DIST_DIR));
